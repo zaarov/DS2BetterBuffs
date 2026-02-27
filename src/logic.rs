@@ -1,4 +1,6 @@
-use memory_box::{ModuleContext, LocalPtr};
+use memory_box::{ModuleContext, MemoryError, LocalPtr};
+
+const BUFFS: [isize; 7] = [0x254, 0x274, 0x294, 0x2B4, 0x2D4, 0x2F4, 0x3B4];
 
 const GAME_MANAGER_IMP: [Option<u8>; 17] = [
     Some(0x48),
@@ -20,7 +22,7 @@ const GAME_MANAGER_IMP: [Option<u8>; 17] = [
     Some(0xF6),
 ];
 
-pub fn apply() -> Option<()> {
+pub fn apply() -> Result<(), MemoryError> {
     let param_start: LocalPtr = ModuleContext::current()?
         .pattern_scan(&GAME_MANAGER_IMP)?
         .rip_relative(3, 7)?
@@ -36,11 +38,9 @@ pub fn apply() -> Option<()> {
         .offset(0x60C)?
         .finish();
 
-    const BUFFS: [isize; 7] = [0x254, 0x274, 0x294, 0x2B4, 0x2D4, 0x2F4, 0x3B4];
-
     for &off in &BUFFS {
-        param_start.offset(off)?.write_f32_protected(0.0)?;
+        param_start.offset(off)?.write_bytes_protected(&0.0f32.to_le_bytes())?;
     }
 
-    Some(())
+    Ok(())
 }
